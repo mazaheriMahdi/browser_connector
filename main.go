@@ -18,9 +18,15 @@ func main() {
 	if err != nil {
 		log.Fatalf("could not start playwright: %v", err)
 	}
-	cdp, err := pw.Chromium.ConnectOverCDP("ws://127.0.0.1:9222/devtools/browser/eb7e9f7e-9378-4b79-94e1-5b6de3058795")
+	//cdp, err := pw.Chromium.ConnectOverCDP("ws://185.220.227.26:9222/devtools/browser/08d387f7-6bb1-41c0-b2ff-4e8d0ed9c6e5")
+	//if err != nil {
+	//	return
+	//}
+	//defer cdp.Close()
+
+	cdp, err := pw.Chromium.Launch()
 	if err != nil {
-		return
+		log.Fatalf("could not launch browser: %v", err)
 	}
 	defer cdp.Close()
 
