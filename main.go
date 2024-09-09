@@ -18,17 +18,17 @@ func main() {
 	if err != nil {
 		log.Fatalf("could not start playwright: %v", err)
 	}
-	//cdp, err := pw.Chromium.ConnectOverCDP("ws://185.220.227.26:9222/devtools/browser/08d387f7-6bb1-41c0-b2ff-4e8d0ed9c6e5")
-	//if err != nil {
-	//	return
-	//}
-	//defer cdp.Close()
-
-	cdp, err := pw.Chromium.Launch()
+	cdp, err := pw.Chromium.ConnectOverCDP("ws://127.0.0.1:9222/devtools/browser/7c984075-0678-4dee-910e-d1da22df9044")
 	if err != nil {
-		log.Fatalf("could not launch browser: %v", err)
+		return
 	}
 	defer cdp.Close()
+
+	//cdp, err := pw.Chromium.Launch()
+	//if err != nil {
+	//	log.Fatalf("could not launch browser: %v", err)
+	//}
+	//defer cdp.Close()
 
 	r := gin.Default()
 	r.POST("/Session", func(c *gin.Context) {
@@ -89,6 +89,7 @@ func main() {
 			session, ok := sessions[id]
 			if !ok {
 				_ = c.AbortWithError(http.StatusBadRequest, errors.New("session not found"))
+				return
 			}
 			session.Context.Pages()[0].WaitForTimeout(dto.Seconds * 1000)
 			c.String(200, "done")
@@ -104,6 +105,7 @@ func main() {
 		session, ok := sessions[id]
 		if !ok {
 			_ = c.AbortWithError(http.StatusBadRequest, errors.New("session not found"))
+			return
 		}
 		content, err := session.Context.Pages()[0].Content()
 		if err != nil {
@@ -112,7 +114,35 @@ func main() {
 		c.JSON(200, gin.H{
 			"content": content,
 		})
+	})
 
+	r.DELETE("/Session/:id", func(c *gin.Context) {
+		id := uuid.MustParse(c.Param("id"))
+
+		session, ok := sessions[id]
+		if !ok {
+			_ = c.AbortWithError(http.StatusBadRequest, errors.New("session not found"))
+			return
+		}
+
+		page := session.Context.Pages()[0]
+		if page.IsClosed() {
+			_ = c.AbortWithError(http.StatusBadRequest, errors.New("session is already closed"))
+			return
+		} else {
+			err := page.Close()
+			if err != nil {
+				_ = c.AbortWithError(http.StatusInternalServerError, errors.New("can't close session"))
+				return
+			}
+		}
+
+		if err != nil {
+			c.AbortWithError(http.StatusInternalServerError, err)
+		}
+		c.JSON(200, gin.H{
+			"status": "done",
+		})
 	})
 
 	r.GET("health", func(c *gin.Context) {
