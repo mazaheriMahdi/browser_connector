@@ -18,8 +18,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("could not start playwright: %v", err)
 	}
-	cdp, err := pw.Chromium.Launch()
-	//cdp, err := pw.Chromium.ConnectOverCDP("ws://127.0.0.1:9222/devtools/browser/2204f766-3ca9-448e-9c31-5aa9561c93e8")
+	//cdp, err := pw.Chromium.Launch()
+	cdp, err := pw.Chromium.ConnectOverCDP("ws://127.0.0.1:9222/devtools/browser/816bcf2b-4ae3-4e8c-86b1-a2632a86df5b")
 	if err != nil {
 		log.Fatalf("could not start chrome: %v", err)
 	}
@@ -136,6 +136,12 @@ func main() {
 				_ = c.AbortWithError(http.StatusInternalServerError, errors.New("can't close session"))
 				return
 			}
+			err = session.Context.Close()
+			if err != nil {
+				_ = c.AbortWithError(http.StatusInternalServerError, errors.New("can't close context"))
+				return
+			}
+
 		}
 
 		if err != nil {
