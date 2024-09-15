@@ -1,33 +1,48 @@
-
-# specify the base image to  be used for the application, alpine or ubuntu
-FROM golang:1.22.7-alpine3.20 AS build
+# Build stage: using Go to build the application
+FROM golang:alpine3.20 AS build
 
 # create a working directory inside the image
 WORKDIR /app
 
 # copy Go modules and dependencies to image
 COPY go.mod ./
+COPY go.sum ./
 
 # download Go modules and dependencies
 RUN go mod download
 
-# copy directory files i.e all files ending with .go
+# copy the entire directory containing Go files
 COPY . .
 
 # compile application
 RUN go build -o /executor
 
-FROM golang:1.22.7-alpine3.20 AS run
+# Final stage: using Playwright image and installing Go and Playwright Go client
+FROM node:20-bookworm
 
-COPY --from=build ./executor ./executor
+# Set the Go version to install
+ENV GO_VERSION=1.23.0
+# Download and install Go manually (latest version)
+RUN apt-get update && \
+    apt-get install -y wget tar && \
+    wget https://go.dev/dl/go$GO_VERSION.linux-amd64.tar.gz && \
+    tar -C /usr/local -xzf go$GO_VERSION.linux-amd64.tar.gz && \
+    rm go$GO_VERSION.linux-amd64.tar.gz
 
-# Copy the config.yml file to the run stage
-COPY --from=build /app/config.yml /config.yml
+# Add Go to PATH
+ENV PATH=$PATH:/usr/local/go/bin
 
-WORKDIR /
+# Install the Go Playwright client
 RUN go run github.com/playwright-community/playwright-go/cmd/playwright@latest install --with-deps
-# tells Docker that the container listens on specified network ports at runtime
+
+# Copy the built application from the build stage
+COPY --from=build /executor /executor
+
+# Set the working directory and copy additional files
+WORKDIR /
+
+# Expose the application's port
 EXPOSE 8081
 
-# command to be used to execute when the image is used to start a container
+# Command to run the application
 CMD [ "/executor" ]
