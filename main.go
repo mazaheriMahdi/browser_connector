@@ -3,6 +3,7 @@ package main
 import (
 	"browser-connector/models"
 	"errors"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/playwright-community/playwright-go"
@@ -93,6 +94,53 @@ func main() {
 				return
 			}
 			session.Context.Pages()[0].WaitForTimeout(dto.Seconds * 1000)
+			c.String(200, "done")
+
+		} else {
+			c.AbortWithError(http.StatusBadRequest, errA)
+		}
+	})
+
+	r.POST("/Session/:id/Scroll", func(c *gin.Context) {
+		id := uuid.MustParse(c.Param("id"))
+		dto := models.ScrollToDto{}
+		if errA := c.ShouldBind(&dto); errA == nil {
+			session, ok := sessions[id]
+			if !ok {
+				_ = c.AbortWithError(http.StatusBadRequest, errors.New("session not found"))
+				return
+			}
+			_, err := session.Context.Pages()[0].Evaluate(fmt.Sprintf("window.scroll(%d,%d)", dto.X, dto.Y))
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"error": "can't scroll to given position",
+				})
+				return
+			}
+			c.String(200, "done")
+
+		} else {
+			c.AbortWithError(http.StatusBadRequest, errA)
+		}
+	})
+
+	r.POST("/Session/:id/Scroll", func(c *gin.Context) {
+		id := uuid.MustParse(c.Param("id"))
+		dto := models.ScrollToDto{}
+		if errA := c.ShouldBind(&dto); errA == nil {
+			session, ok := sessions[id]
+			if !ok {
+				_ = c.AbortWithError(http.StatusBadRequest, errors.New("session not found"))
+				return
+			}
+			_, err := session.Context.Pages()[0].Evaluate(fmt.Sprintf("window.scroll(%d,%d)", dto.X, dto.Y))
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"error": "can't scroll to given position",
+				})
+
+				return
+			}
 			c.String(200, "done")
 
 		} else {
