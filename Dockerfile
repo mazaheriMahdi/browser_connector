@@ -27,8 +27,7 @@ RUN apt-get update && \
     apt-get install -y wget tar && \
     wget https://go.dev/dl/go$GO_VERSION.linux-amd64.tar.gz && \
     tar -C /usr/local -xzf go$GO_VERSION.linux-amd64.tar.gz && \
-    rm go$GO_VERSION.linux-amd64.tar. && \
-    apt clean
+    rm go$GO_VERSION.linux-amd64.tar.
 
 # Add Go to PATH
 ENV PATH=$PATH:/usr/local/go/bin

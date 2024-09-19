@@ -103,7 +103,7 @@ func main() {
 
 	r.POST("/Session/:id/Scroll", func(c *gin.Context) {
 		id := uuid.MustParse(c.Param("id"))
-		dto := models.ScrollToDto{}
+		dto := models.ScrollDto{}
 		if errA := c.ShouldBind(&dto); errA == nil {
 			session, ok := sessions[id]
 			if !ok {
