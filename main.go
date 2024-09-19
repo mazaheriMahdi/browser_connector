@@ -124,28 +124,23 @@ func main() {
 		}
 	})
 
-	r.POST("/Session/:id/Screenshot", func(c *gin.Context) {
+	r.GET("/Session/:id/Screenshot", func(c *gin.Context) {
 		id := uuid.MustParse(c.Param("id"))
-		dto := models.ScrollToDto{}
-		if errA := c.ShouldBind(&dto); errA == nil {
-			session, ok := sessions[id]
-			if !ok {
-				_ = c.AbortWithError(http.StatusBadRequest, errors.New("session not found"))
-				return
-			}
-			screenshot, err := session.Context.Pages()[0].Screenshot()
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{
-					"error": "can't scroll to given position",
-				})
 
-				return
-			}
-			c.Data(200, "image/png", screenshot)
-
-		} else {
-			c.AbortWithError(http.StatusBadRequest, errA)
+		session, ok := sessions[id]
+		if !ok {
+			_ = c.AbortWithError(http.StatusBadRequest, errors.New("session not found"))
+			return
 		}
+		screenshot, err := session.Context.Pages()[0].Screenshot()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "can't scroll to given position",
+			})
+			return
+		}
+		c.Data(200, "image/png", screenshot)
+
 	})
 
 	r.GET("/Session/:id/Content", func(c *gin.Context) {
