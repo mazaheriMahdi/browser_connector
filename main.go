@@ -25,7 +25,6 @@ func main() {
 		log.Fatalf("could not start chrome: %v", err)
 	}
 	defer cdp.Close()
-
 	//cdp, err := pw.Chromium.Launch()
 	//if err != nil {
 	//	log.Fatalf("could not launch browser: %v", err)
@@ -99,6 +98,20 @@ func main() {
 		} else {
 			c.AbortWithError(http.StatusBadRequest, errA)
 		}
+	})
+
+	r.POST("/Session/:id/Clean", func(c *gin.Context) {
+		id := uuid.MustParse(c.Param("id"))
+
+		session, ok := sessions[id]
+		if !ok {
+			_ = c.AbortWithError(http.StatusBadRequest, errors.New("session not found"))
+			return
+		}
+		session.Context.Pages()[0].Close()
+		session.Context.NewPage()
+		c.String(200, "done")
+
 	})
 
 	r.POST("/Session/:id/Scroll", func(c *gin.Context) {
@@ -175,6 +188,7 @@ func main() {
 			return
 		} else {
 			err := page.Close()
+			delete(sessions, id)
 			if err != nil {
 				_ = c.AbortWithError(http.StatusInternalServerError, errors.New("can't close session"))
 				return
