@@ -35,8 +35,14 @@ func main() {
 	r.POST("/Session", func(c *gin.Context) {
 		id := uuid.New()
 		context, err2 := cdp.NewContext()
+		_, err := context.NewPage()
+		if err != nil {
+			_ = c.AbortWithError(500, err2)
+			return
+		}
 		if err2 != nil {
 			_ = c.AbortWithError(500, err2)
+			return
 		}
 		sessions[id] = models.Session{
 			SessionId:  id,
@@ -57,10 +63,7 @@ func main() {
 			if !ok {
 				_ = c.AbortWithError(http.StatusBadRequest, errors.New("session not found"))
 			}
-			page, err := session.Context.NewPage()
-			if err != nil {
-				_ = c.AbortWithError(http.StatusInternalServerError, err)
-			}
+			page := session.Context.Pages()[session.ActivePage]
 			_, err = page.Goto(dto.Url)
 			if err != nil {
 				_ = c.AbortWithError(http.StatusInternalServerError, err)
