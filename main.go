@@ -39,8 +39,9 @@ func main() {
 			_ = c.AbortWithError(500, err2)
 		}
 		sessions[id] = models.Session{
-			SessionId: id,
-			Context:   context,
+			SessionId:  id,
+			Context:    context,
+			ActivePage: 0,
 		}
 		c.JSON(200, gin.H{
 			"sessionId": id,
@@ -92,7 +93,7 @@ func main() {
 				_ = c.AbortWithError(http.StatusBadRequest, errors.New("session not found"))
 				return
 			}
-			session.Context.Pages()[0].WaitForTimeout(dto.Seconds * 1000)
+			session.Context.Pages()[session.ActivePage].WaitForTimeout(dto.Seconds * 1000)
 			c.String(200, "done")
 
 		} else {
@@ -108,12 +109,12 @@ func main() {
 			_ = c.AbortWithError(http.StatusBadRequest, errors.New("session not found"))
 			return
 		}
-		session.Context.Pages()[0].Close()
-		page, err := session.Context.NewPage()
+		session.Context.Pages()[session.ActivePage].Close()
+		session.ActivePage--
+		_, err := session.Context.NewPage()
 		if err != nil {
 			return
 		}
-		session.Context.Pages()[0] = page
 		c.String(200, "done")
 
 	})
@@ -127,7 +128,7 @@ func main() {
 				_ = c.AbortWithError(http.StatusBadRequest, errors.New("session not found"))
 				return
 			}
-			_, err := session.Context.Pages()[0].Evaluate(fmt.Sprintf("window.scroll(%d,%d)", dto.X, dto.Y))
+			_, err := session.Context.Pages()[session.ActivePage].Evaluate(fmt.Sprintf("window.scroll(%d,%d)", dto.X, dto.Y))
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{
 					"error": "can't scroll to given position",
@@ -149,7 +150,7 @@ func main() {
 			_ = c.AbortWithError(http.StatusBadRequest, errors.New("session not found"))
 			return
 		}
-		screenshot, err := session.Context.Pages()[0].Screenshot()
+		screenshot, err := session.Context.Pages()[session.ActivePage].Screenshot()
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": "can't scroll to given position",
@@ -168,7 +169,7 @@ func main() {
 			_ = c.AbortWithError(http.StatusBadRequest, errors.New("session not found"))
 			return
 		}
-		content, err := session.Context.Pages()[0].Content()
+		content, err := session.Context.Pages()[session.ActivePage].Content()
 		if err != nil {
 			c.AbortWithError(http.StatusInternalServerError, err)
 		}
@@ -186,7 +187,7 @@ func main() {
 			return
 		}
 
-		page := session.Context.Pages()[0]
+		page := session.Context.Pages()[session.ActivePage]
 		if page.IsClosed() {
 			_ = c.AbortWithError(http.StatusBadRequest, errors.New("session is already closed"))
 			return
