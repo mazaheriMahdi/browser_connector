@@ -109,7 +109,11 @@ func main() {
 			return
 		}
 		session.Context.Pages()[0].Close()
-		session.Context.NewPage()
+		page, err := session.Context.NewPage()
+		if err != nil {
+			return
+		}
+		session.Context.Pages()[0] = page
 		c.String(200, "done")
 
 	})
