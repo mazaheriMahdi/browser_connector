@@ -104,6 +104,42 @@ func main() {
 		}
 	})
 
+	r.POST("/Session/:id/Click", func(c *gin.Context) {
+		id := uuid.MustParse(c.Param("id"))
+		dto := models.ClickDto{}
+		if errA := c.ShouldBind(&dto); errA == nil {
+
+			session, ok := sessions[id]
+			if !ok {
+				_ = c.AbortWithError(http.StatusBadRequest, errors.New("session not found"))
+				return
+			}
+			session.Context.Pages()[session.ActivePage].Click(dto.Selector)
+			c.String(200, "done")
+
+		} else {
+			c.AbortWithError(http.StatusBadRequest, errA)
+		}
+	})
+
+	r.POST("/Session/:id/Type", func(c *gin.Context) {
+		id := uuid.MustParse(c.Param("id"))
+		dto := models.TypeDto{}
+		if errA := c.ShouldBind(&dto); errA == nil {
+
+			session, ok := sessions[id]
+			if !ok {
+				_ = c.AbortWithError(http.StatusBadRequest, errors.New("session not found"))
+				return
+			}
+			session.Context.Pages()[session.ActivePage].Type(dto.Selector, dto.Phrase)
+			c.String(200, "done")
+
+		} else {
+			c.AbortWithError(http.StatusBadRequest, errA)
+		}
+	})
+
 	r.POST("/Session/:id/Clean", func(c *gin.Context) {
 		id := uuid.MustParse(c.Param("id"))
 
