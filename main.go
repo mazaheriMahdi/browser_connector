@@ -34,20 +34,13 @@ func main() {
 	r := gin.Default()
 	r.POST("/Session", func(c *gin.Context) {
 		id := uuid.New()
-		context, err2 := cdp.NewContext()
-		_, err := context.NewPage()
+		_, err := cdp.NewPage()
 		if err != nil {
-			_ = c.AbortWithError(500, err2)
-			return
-		}
-		if err2 != nil {
-			_ = c.AbortWithError(500, err2)
+			_ = c.AbortWithError(500, err)
 			return
 		}
 		sessions[id] = models.Session{
-			SessionId:  id,
-			Context:    context,
-			ActivePage: 0,
+			SessionId: id,
 		}
 		c.JSON(200, gin.H{
 			"sessionId": id,
@@ -63,16 +56,15 @@ func main() {
 			if !ok {
 				_ = c.AbortWithError(http.StatusBadRequest, errors.New("session not found"))
 			}
-			page := session.Context.Pages()[session.ActivePage]
-			_, err = page.Goto(dto.Url)
+			_, err = session.Page.Goto(dto.Url)
 			if err != nil {
 				_ = c.AbortWithError(http.StatusInternalServerError, err)
 			}
-			err = page.WaitForLoadState()
+			err = session.Page.WaitForLoadState()
 			if err != nil {
 				_ = c.AbortWithError(http.StatusInternalServerError, err)
 			}
-			content, err := page.Content()
+			content, err := session.Page.Content()
 			if err != nil {
 				_ = c.AbortWithError(http.StatusInternalServerError, err)
 			}
@@ -96,7 +88,7 @@ func main() {
 				_ = c.AbortWithError(http.StatusBadRequest, errors.New("session not found"))
 				return
 			}
-			session.Context.Pages()[session.ActivePage].WaitForTimeout(dto.Seconds * 1000)
+			session.Page.WaitForTimeout(dto.Seconds * 1000)
 			c.String(200, "done")
 
 		} else {
@@ -114,7 +106,7 @@ func main() {
 				_ = c.AbortWithError(http.StatusBadRequest, errors.New("session not found"))
 				return
 			}
-			session.Context.Pages()[session.ActivePage].Click(dto.Selector)
+			session.Page.Click(dto.Selector)
 			c.String(200, "done")
 
 		} else {
@@ -132,7 +124,7 @@ func main() {
 				_ = c.AbortWithError(http.StatusBadRequest, errors.New("session not found"))
 				return
 			}
-			session.Context.Pages()[session.ActivePage].Type(dto.Selector, dto.Phrase)
+			session.Page.Type(dto.Selector, dto.Phrase)
 			c.String(200, "done")
 
 		} else {
@@ -148,9 +140,9 @@ func main() {
 			_ = c.AbortWithError(http.StatusBadRequest, errors.New("session not found"))
 			return
 		}
-		session.Context.Pages()[session.ActivePage].Close()
-		session.ActivePage--
-		_, err := session.Context.NewPage()
+		session.Page.Close()
+		session.Page, _ = cdp.NewPage()
+		sessions[id] = session
 		if err != nil {
 			return
 		}
@@ -167,7 +159,7 @@ func main() {
 				_ = c.AbortWithError(http.StatusBadRequest, errors.New("session not found"))
 				return
 			}
-			_, err := session.Context.Pages()[session.ActivePage].Evaluate(fmt.Sprintf("window.scroll(%d,%d)", dto.X, dto.Y))
+			_, err := session.Page.Evaluate(fmt.Sprintf("window.scroll(%d,%d)", dto.X, dto.Y))
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{
 					"error": "can't scroll to given position",
@@ -189,7 +181,7 @@ func main() {
 			_ = c.AbortWithError(http.StatusBadRequest, errors.New("session not found"))
 			return
 		}
-		screenshot, err := session.Context.Pages()[session.ActivePage].Screenshot()
+		screenshot, err := session.Page.Screenshot()
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": "can't scroll to given position",
@@ -208,7 +200,7 @@ func main() {
 			_ = c.AbortWithError(http.StatusBadRequest, errors.New("session not found"))
 			return
 		}
-		content, err := session.Context.Pages()[session.ActivePage].Content()
+		content, err := session.Page.Content()
 		if err != nil {
 			c.AbortWithError(http.StatusInternalServerError, err)
 		}
@@ -225,19 +217,17 @@ func main() {
 			_ = c.AbortWithError(http.StatusBadRequest, errors.New("session not found"))
 			return
 		}
-
-		page := session.Context.Pages()[session.ActivePage]
-		if page.IsClosed() {
+		if session.Page.IsClosed() {
 			_ = c.AbortWithError(http.StatusBadRequest, errors.New("session is already closed"))
 			return
 		} else {
-			err := page.Close()
+			err := session.Page.Close()
 			delete(sessions, id)
 			if err != nil {
 				_ = c.AbortWithError(http.StatusInternalServerError, errors.New("can't close session"))
 				return
 			}
-			err = session.Context.Close()
+			err = session.Page.Close()
 			if err != nil {
 				_ = c.AbortWithError(http.StatusInternalServerError, errors.New("can't close context"))
 				return

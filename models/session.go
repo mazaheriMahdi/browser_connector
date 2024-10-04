@@ -6,7 +6,7 @@ import (
 )
 
 type Session struct {
-	SessionId  uuid.UUID `json:"sessionId"`
-	Context    playwright.BrowserContext
-	ActivePage int64
+	SessionId uuid.UUID `json:"sessionId"`
+	Page      playwright.Page
+	isUse     bool
 }
