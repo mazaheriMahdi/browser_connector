@@ -61,10 +61,6 @@ func main() {
 			if err != nil {
 				_ = c.AbortWithError(http.StatusInternalServerError, err)
 			}
-			err = session.Page.WaitForLoadState()
-			if err != nil {
-				_ = c.AbortWithError(http.StatusInternalServerError, err)
-			}
 			content, err := session.Page.Content()
 			if err != nil {
 				_ = c.AbortWithError(http.StatusInternalServerError, err)
@@ -90,6 +86,24 @@ func main() {
 				return
 			}
 			session.Page.WaitForTimeout(dto.Seconds * 1000)
+			c.String(200, "done")
+
+		} else {
+			c.AbortWithError(http.StatusBadRequest, errA)
+		}
+	})
+
+	r.POST("/Session/:id/Wait", func(c *gin.Context) {
+		id := uuid.MustParse(c.Param("id"))
+		dto := models.WaitForElementDto{}
+		if errA := c.ShouldBind(&dto); errA == nil {
+
+			session, ok := sessions[id]
+			if !ok {
+				_ = c.AbortWithError(http.StatusBadRequest, errors.New("session not found"))
+				return
+			}
+			session.Page.WaitForSelector(dto.Selector)
 			c.String(200, "done")
 
 		} else {
