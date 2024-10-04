@@ -34,13 +34,14 @@ func main() {
 	r := gin.Default()
 	r.POST("/Session", func(c *gin.Context) {
 		id := uuid.New()
-		_, err := cdp.NewPage()
+		page, err := cdp.NewPage()
 		if err != nil {
 			_ = c.AbortWithError(500, err)
 			return
 		}
 		sessions[id] = models.Session{
 			SessionId: id,
+			Page:      page,
 		}
 		c.JSON(200, gin.H{
 			"sessionId": id,
