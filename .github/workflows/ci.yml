@@ -20,8 +20,8 @@ jobs:
         with:
           # list of Docker images to use as base name for tags
           images: |
-            ${{ vars.DOCKERHUB_USERNAME }}/app
-            ghcr.io/mazaherimahdi/app
+            ${{ vars.DOCKERHUB_USERNAME }}/chrome-rest-remote-debugging-browser
+            ghcr.io/mazaheriMahdi/chrome-rest-remote-debugging-browser
           # generate Docker tags based on the following events/attributes
           tags: |
             type=schedule
@@ -51,7 +51,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.GH_TOKEN }}
 
       - name: Build and push
         uses: docker/build-push-action@v6
