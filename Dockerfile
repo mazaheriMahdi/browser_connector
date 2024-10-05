@@ -16,7 +16,7 @@ RUN PWGO_VER=$(grep -oE "playwright-go v\S+" /workdir/go.mod | sed 's/playwright
 RUN GOOS=linux GOARCH=amd64 go build -o /bin/myapp
 
 # Stage 3: Final
-FROM ubuntu:jammy
+FROM debian:trixie
 RUN apt-get update && apt-get install -y ca-certificates tzdata
 COPY --from=builder /go/bin/playwright /bin/myapp /
 RUN /playwright install --with-deps \
