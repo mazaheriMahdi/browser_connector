@@ -17,9 +17,8 @@ RUN GOOS=linux GOARCH=amd64 go build -o /bin/myapp
 
 # Stage 3: Final
 FROM ubuntu:jammy
+RUN apt-get update && apt-get install -y ca-certificates tzdata
 COPY --from=builder /go/bin/playwright /bin/myapp /
-RUN apt-get update && apt-get install -y ca-certificates tzdata \
-    # Install dependencies and all browsers (or specify one)
-    && /playwright install --with-deps \
+RUN /playwright install --with-deps \
     && rm -rf /var/lib/apt/lists/*
 CMD ["/myapp"]

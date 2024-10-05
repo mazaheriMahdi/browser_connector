@@ -50,7 +50,10 @@ func main() {
 
 	r.POST("/Session/:id/Goto", func(c *gin.Context) {
 		id := uuid.MustParse(c.Param("id"))
-		dto := models.GotoDto{}
+		dto := models.GotoDto{
+			PageHeight: 1080,
+			PageWidth:  1920,
+		}
 		if errA := c.ShouldBind(&dto); errA == nil {
 
 			session, ok := sessions[id]
@@ -58,6 +61,14 @@ func main() {
 				_ = c.AbortWithError(http.StatusBadRequest, errors.New("session not found"))
 			}
 			_, err = session.Page.Goto(dto.Url)
+			err := session.Page.SetViewportSize(dto.PageWidth, dto.PageHeight)
+			if err != nil {
+				_ = c.AbortWithError(http.StatusInternalServerError, err)
+			}
+			if err != nil {
+				_ = c.AbortWithError(http.StatusInternalServerError, err)
+			}
+			err = session.Page.WaitForLoadState()
 			if err != nil {
 				_ = c.AbortWithError(http.StatusInternalServerError, err)
 			}
